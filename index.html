@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Онлайн Магазин - Инструменти, Електроника и Дом</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --accent: #f59e0b;
+            --dark: #1f2937;
+            --light: #f3f4f6;
+            --white: #ffffff;
+            --gray: #6b7280;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: var(--light); color: var(--dark); line-height: 1.6; }
+        
+        header { background: var(--dark); color: var(--white); padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .logo { font-size: 1.5rem; font-weight: bold; color: var(--accent); }
+        .cart-btn { background: var(--primary); color: var(--white); border: none; padding: 0.5rem 1rem; border-radius: 5px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 8px; }
+        .cart-btn:hover { background: var(--primary-dark); }
+
+        .container { max-width: 1200px; margin: 2rem auto; padding: 0 1rem; }
+        
+        .filters { display: flex; gap: 10px; margin-bottom: 2rem; overflow-x: auto; padding-bottom: 5px; }
+        .filter-btn { background: var(--white); border: 1px solid #d1d5db; padding: 0.5rem 1rem; border-radius: 20px; cursor: pointer; white-space: nowrap; transition: 0.2s; }
+        .filter-btn.active, .filter-btn:hover { background: var(--primary); color: var(--white); border-color: var(--primary); }
+
+        .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.5rem; }
+        .product-card { background: var(--white); border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.05); display: flex; flex-direction: column; transition: transform 0.2s; }
+        .product-card:hover { transform: translateY(-5px); }
+        .product-img { height: 180px; background: #e5e7eb; display: flex; align-items: center; justify-content: center; color: var(--gray); font-size: 0.9rem; position: relative; }
+        .product-badge { position: absolute; top: 10px; left: 10px; background: var(--accent); color: var(--white); padding: 2px 8px; font-size: 0.8rem; border-radius: 4px; font-weight: bold; }
+        .product-info { padding: 1.2rem; display: flex; flex-direction: column; flex-grow: 1; }
+        .product-title { font-size: 1.1rem; font-weight: bold; margin-bottom: 0.5rem; }
+        .product-desc { font-size: 0.9rem; color: var(--gray); margin-bottom: 1rem; flex-grow: 1; }
+        .product-footer { display: flex; justify-content: space-between; align-items: center; margin-top: auto; }
+        .product-price { font-size: 1.2rem; font-weight: bold; color: var(--primary); }
+        .add-to-cart { background: var(--dark); color: var(--white); border: none; padding: 0.5rem 1rem; border-radius: 5px; cursor: pointer; transition: 0.2s; }
+        .add-to-cart:hover { background: var(--primary); }
+
+        /* Модал за количка и поръчка */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 2000; }
+        .modal-content { background: var(--white); width: 100%; max-width: 600px; padding: 2rem; border-radius: 8px; max-height: 90vh; overflow-y: auto; position: relative; }
+        .close-modal { position: absolute; top: 1rem; right: 1rem; font-size: 1.5rem; cursor: pointer; color: var(--gray); }
+        
+        .cart-item { display: flex; justify-content: space-between; align-items: center; padding: 0.8rem 0; border-bottom: 1px solid #e5e7eb; }
+        .cart-total { font-size: 1.3rem; font-weight: bold; text-align: right; margin: 1.5rem 0; }
+        
+        .checkout-form input, .checkout-form textarea { width: 100%; padding: 0.8rem; margin-bottom: 1rem; border: 1px solid #d1d5db; border-radius: 5px; }
+        .checkout-btn { background: #16a34a; color: var(--white); border: none; width: 100%; padding: 1rem; font-size: 1rem; font-weight: bold; border-radius: 5px; cursor: pointer; }
+        .checkout-btn:hover { background: #15803d; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">ProShop Online</div>
+        <button class="cart-btn" onclick="toggleCart()">🛒 Количка (<span id="cart-count">0</span>)</button>
+    </header>
+
+    <div class="container">
+        <!-- Филтри по категории -->
+        <div class="filters">
+            <button class="filter-btn active" onclick="filterProducts('all', this)">Всички продукти</button>
+            <button class="filter-btn" onclick="filterProducts('tools', this)">Строителни инструменти</button>
+            <button class="filter-btn" onclick="filterProducts('auto', this)">Авто аксесоари</button>
+            <button class="filter-btn" onclick="filterProducts('electronics', this)">Електроника</button>
+            <button class="filter-btn" onclick="filterProducts('home', this)">Дом и градина</button>
+        </div>
+
+        <!-- Продуктов каталог -->
+        <div class="products-grid" id="product-grid">
+            <!-- Продуктите се зареждат динамично през JS -->
+        </div>
+    </div>
+
+    <!-- Модал Количка и Поръчка -->
+    <div class="modal" id="cart-modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="toggleCart()">&times;</span>
+            <h2>Вашата количка</h2>
+            <div id="cart-items-container">
+                <!-- Артикулите в количката -->
+            </div>
+            <div class="cart-total">Общо: <span id="cart-total-price">0.00</span> лв.</div>
+            
+            <h3>Данни за доставка</h3>
+            <div class="checkout-form">
+                <input type="text" id="client-name" placeholder="Имена на получател">
+                <input type="text" id="client-phone" placeholder="Телефон за връзка">
+                <textarea id="client-address" placeholder="Адрес за доставка (град, офис на Еконт/Спиди или личен адрес)"></textarea>
+                <button class="checkout-btn" onclick="sendOrder()">Завърши поръчката</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Примерен каталог с продукти (можеш лесно да ги сменяш или добавяш нови)
+        const products = [
+            { id: 1, name: "Акумулаторен винтоверт 20V", category: "tools", price: 129.99, desc: "Мощен безчетков винтоверт с две батерии и куфар.", badge: "Топ избор" },
+            { id: 2, name: "Лазерен нивелир 4D", category: "tools", price: 189.00, desc: "Саморазливен 16-линеен зелен лазерен лъч с дистанционно.", badge: "Ново" },
+            { id: 3, name: "Камера за задно виждане с парктроник", category: "auto", price: 49.99, desc: "Водоустойчива камера с нощно виждане и монитор.", badge: "Хит" },
+            { id: 4, name: "Органайзер за автомобилен багажник", category: "auto", price: 29.90, desc: "Сгъваема чанта с голям обем и прегради.", badge: "" },
+            { id: 5, name: "Смарт Wi-Fi камера за видеонаблюдение", category: "electronics", price: 55.00, desc: "Въртяща се 360° камера с нощно виждане и двупосочно аудио.", badge: "Промо" },
+            { id: 6, name: "Преносима слънчева лампа с фенер", category: "electronics", price: 35.00, desc: "USB зареждане и соларен панел, подходяща за къмпинг и градина.", badge: "" },
+            { id: 7, name: "Автоматична система за капково напояване", category: "home", price: 42.00, desc: "Програмируем таймер за поливане на саксии и оранжерии.", badge: "Градина" },
+            { id: 8, name: "Уред против гризачи и вредители", category: "home", price: 24.99, desc: "Ултразвуково устройство за защита на дома и двора.", badge: "" }
+        ];
+
+        let cart = [];
+
+        function renderProducts(filter = 'all') {
+            const grid = document.getElementById('product-grid');
+            grid.innerHTML = '';
+            
+            const filtered = filter === 'all' ? products : products.filter(p => p.category === filter);
+            
+            filtered.forEach(p => {
+                grid.innerHTML += `
+                    <div class="product-card">
+                        <div class="product-img">
+                            ${p.badge ? `<span class="product-badge">${p.badge}</span>` : ''}
+                            <span>Снимка на продукта</span>
+                        </div>
+                        <div class="product-info">
+                            <div class="product-title">${p.name}</div>
+                            <div class="product-desc">${p.desc}</div>
+                            <div class="product-footer">
+                                <span class="product-price">${p.price.toFixed(2)} лв.</span>
+                                <button class="add-to-cart" onclick="addToCart(${p.id})">Купи</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function filterProducts(category, btn) {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderProducts(category);
+        }
+
+        function addToCart(productId) {
+            const product = products.find(p => p.id === productId);
+            const existing = cart.find(item => item.id === productId);
+            if (existing) {
+                existing.qty++;
+            } else {
+                cart.push({ ...product, qty: 1 });
+            }
+            updateCartUI();
+            alert('Продуктът е добавен в количката!');
+        }
+
+        function updateCartUI() {
+            document.getElementById('cart-count').innerText = cart.reduce((sum, item) => sum + item.qty, 0);
+            
+            const container = document.getElementById('cart-items-container');
+            container.innerHTML = '';
+            
+            let total = 0;
+            cart.forEach(item => {
+                total += item.price * item.qty;
+                container.innerHTML += `
+                    <div class="cart-item">
+                        <div>
+                            <strong>${item.name}</strong><br>
+                            <small>${item.qty} бр. x ${item.price.toFixed(2)} лв.</small>
+                        </div>
+                        <div>
+                            <span>${(item.price * item.qty).toFixed(2)} лв.</span>
+                            <button onclick="removeFromCart(${item.id})" style="background:red; color:white; border:none; padding:2px 5px; margin-left:10px; cursor:pointer;">X</button>
+                        </div>
+                    </div>
+                `;
+            });
+            document.getElementById('cart-total-price').innerText = total.toFixed(2);
+        }
+
+        function removeFromCart(productId) {
+            cart = cart.filter(item => item.id !== productId);
+            updateCartUI();
+        }
+
+        function toggleCart() {
+            const modal = document.getElementById('cart-modal');
+            modal.style.display = modal.style.display === 'flex' ? 'none' : 'flex';
+        }
+
+        function sendOrder() {
+            const name = document.getElementById('client-name').value.trim();
+            const phone = document.getElementById('client-phone').value.trim();
+            const address = document.getElementById('client-address').value.trim();
+
+            if (!name || !phone || !address) {
+                alert('Моля, попълнете всички полета за доставка!');
+                return;
+            }
+
+            if (cart.length === 0) {
+                alert('Количката ви е празна!');
+                return;
+            }
+
+            let orderText = `Нова поръчка от магазин:%0A`;
+            orderText += `Имена: ${name}%0A`;
+            orderText += `Телефон: ${phone}%0A`;
+            orderText += `Адрес: ${address}%0A%0A`;
+            orderText += `Продукти:%0A`;
+            
+            let total = 0;
+            cart.forEach(item => {
+                orderText += `- ${item.name} (${item.qty} бр.) - ${(item.price * item.qty).toFixed(2)} лв.%0A`;
+                total += item.price * item.qty;
+            });
+            orderText += `%0AОбща сума: ${total.toFixed(2)} лв.`;
+
+            // Можеш да замениш този телефон с твоя личен номер (в международен формат, напр. 3598XXXXXXXX)
+            const myPhoneNumber = "359888888888"; 
+            const whatsappUrl = `https://wa.me/${myPhoneNumber}?text=${orderText}`;
+
+            window.open(whatsappUrl, '_blank');
+        }
+
+        // Първоначално зареждане на каталога
+        renderProducts();
+    </script>
+</body>
+</html>
